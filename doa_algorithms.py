@@ -3,6 +3,8 @@ import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 import pyroomacoustics as pra
+from display_grid_sphere import plot_grid_sphere
+from tabulate import tabulate
 
 methods = ["MUSIC", "FRIDA", "WAVES", "TOPS", "CSSM", "SRP", "NormMUSIC"]
 
@@ -21,8 +23,10 @@ def main(args):
 
     # ソースの極座標系パラメータ
     radius = 5  # 半径
-    azimuth_true = np.pi / 4  # 方位角
-    colatitude_true = np.pi / 6  # 天頂角
+    # 方位角
+    azimuth_true = -np.pi / 3
+    # 天頂角
+    colatitude_true = np.pi / 4
 
     # XYZ座標の計算
     source_x = radius * np.sin(colatitude_true) * np.cos(azimuth_true) + l_half
@@ -33,11 +37,11 @@ def main(args):
     # place the microphone array
     mic_locs = np.array(
         [
-            [ 0.1 + l_half, l_half, l_half],
+            [0.1 + l_half, l_half, l_half],
             [-0.1 + l_half, l_half, l_half],
-            [l_half,  0.1 + l_half, l_half],
+            [l_half, 0.1 + l_half, l_half],
             [l_half, -0.1 + l_half, l_half],
-            [l_half, l_half,  0.1 + l_half],
+            [l_half, l_half, 0.1 + l_half],
             [l_half, l_half, -0.1 + l_half],
         ]
     ).T
@@ -46,8 +50,8 @@ def main(args):
     # run the simulation
     room.simulate()
 
-    # room.plot()
-    # plt.show()
+    room.plot()
+    plt.show()
 
     # create frequency-domain input for DOA algorithms
     X = pra.transform.stft.analysis(
@@ -59,20 +63,15 @@ def main(args):
     doa = pra.doa.algorithms[args.method](mic_locs, fs, nfft, dim=3)
     doa.locate_sources(X)
 
-    # 結果の評価
-    # 出力用のフォーマットを設定
-    azimuth_str = "Azimuth"
-    colatitude_str = "Colatitude"
-    real_str = "Real source"
-    estimated_str = "Estimated source"
+    # 表示
+    data = [
+        ["Azimuth", np.rad2deg(azimuth_true), np.rad2deg(doa.azimuth_recon[0])],
+        ["Colatitude", np.rad2deg(colatitude_true), np.rad2deg(doa.colatitude_recon[0])],
+    ]
+    headers = ["Parameter", "Real Source (degrees)", "Estimated Source (degrees)"]
+    print(tabulate(data, headers, tablefmt="grid"))
 
-    # 方位角
-    print(f"{real_str:<20} {azimuth_str:<10}: {np.rad2deg(azimuth_true):.2f} degrees")
-    print(f"{estimated_str:<20} {azimuth_str:<10}: {np.rad2deg(doa.azimuth_recon[0]):.2f} degrees")
-
-    # 天頂角
-    print(f"{real_str:<20} {colatitude_str:<10}: {np.rad2deg(colatitude_true):.2f} degrees")
-    print(f"{estimated_str:<20} {colatitude_str:<10}: {np.rad2deg(doa.colatitude_recon[0]):.2f} degrees")
+    plot_grid_sphere(doa.grid.cartesian, doa.grid.values)
 
 
 if __name__ == "__main__":

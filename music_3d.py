@@ -3,6 +3,7 @@ import numpy as np
 from scipy.io import wavfile
 import matplotlib.pyplot as plt
 from pyroomacoustics.doa import MUSIC
+# from lib.doa import MUSIC
 
 
 def plot_room(room: pra.ShoeBox) -> None:
@@ -20,18 +21,10 @@ def plot_room(room: pra.ShoeBox) -> None:
     plt.show()
 
 
-def perform_fft_on_frames(signal, nfft, hop_size):
-    num_frames = (signal.shape[1] - nfft) // hop_size + 1
-    X = np.empty((signal.shape[0], nfft // 2 + 1, num_frames), dtype=complex)
-    for t in range(num_frames):
-        frame = signal[:, t * hop_size : t * hop_size + nfft]
-        X[:, :, t] = np.fft.rfft(frame, n=nfft)
-    return X
-
-
 def main():
     side_length = 50
     fs = 16000
+    nfft = 512
 
     room = pra.ShoeBox([side_length, side_length, side_length], fs=fs, max_order=0)
 
@@ -53,13 +46,17 @@ def main():
     simulated_signal = room.mic_array.signals
     print(simulated_signal.shape)
 
-    nfft = 512
+    # フーリエ変換
+    X = pra.transform.stft.analysis(
+        room.mic_array.signals.T, nfft, nfft // 4, win=np.hanning(nfft)
+    )
+    X = np.swapaxes(X, 2, 0)
+
     doa = MUSIC(
         mic_positions_3d,
         fs,
         nfft,
     )
-    X = perform_fft_on_frames(simulated_signal, nfft, nfft // 4)
     doa.locate_sources(X, num_src=1)
     print(doa.grid.azimuth.shape)
     print(doa.grid.values.shape)
