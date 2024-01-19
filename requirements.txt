@@ -1,0 +1,6 @@
+pyroomacoustics
+matplotlib
+numpy
+scipy
+tabulate
+numpy-stl
