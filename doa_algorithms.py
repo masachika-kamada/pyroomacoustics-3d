@@ -3,8 +3,10 @@ import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 import pyroomacoustics as pra
-from display_grid_sphere import plot_grid_sphere
+from scipy.io import wavfile
 from tabulate import tabulate
+
+from display_grid_sphere import plot_grid_sphere
 
 methods = ["MUSIC", "FRIDA", "WAVES", "TOPS", "CSSM", "SRP", "NormMUSIC"]
 
@@ -13,13 +15,13 @@ def main(args):
     # we use a white noise signal for the source
     nfft = 256
     fs = 16000
-    x = np.random.randn((nfft // 2 + 1) * nfft)
 
     # create anechoic room
-    # room = pra.AnechoicRoom(fs=fs)
     l = 15
     l_half = l / 2
     room = pra.ShoeBox([l, l, l], fs=fs, absorption=1.0, max_order=0)
+
+    signal = wavfile.read("data/arctic_a0001.wav")[1]
 
     # ソースの極座標系パラメータ
     radius = 5  # 半径
@@ -32,7 +34,7 @@ def main(args):
     source_x = radius * np.sin(colatitude_true) * np.cos(azimuth_true) + l_half
     source_y = radius * np.sin(colatitude_true) * np.sin(azimuth_true) + l_half
     source_z = radius * np.cos(colatitude_true) + l_half
-    room.add_source([source_x, source_y, source_z], signal=x)
+    room.add_source([source_x, source_y, source_z], signal=signal)
 
     # place the microphone array
     mic_locs = np.array(
@@ -51,6 +53,7 @@ def main(args):
     room.simulate()
 
     room.plot()
+    plt.savefig("imgs/room.png")
     plt.show()
 
     # create frequency-domain input for DOA algorithms
@@ -66,12 +69,16 @@ def main(args):
     # 表示
     data = [
         ["Azimuth", np.rad2deg(azimuth_true), np.rad2deg(doa.azimuth_recon[0])],
-        ["Colatitude", np.rad2deg(colatitude_true), np.rad2deg(doa.colatitude_recon[0])],
+        [
+            "Colatitude",
+            np.rad2deg(colatitude_true),
+            np.rad2deg(doa.colatitude_recon[0]),
+        ],
     ]
     headers = ["Parameter", "Real Source (degrees)", "Estimated Source (degrees)"]
     print(tabulate(data, headers, tablefmt="grid"))
 
-    plot_grid_sphere(doa.grid.cartesian, doa.grid.values)
+    plot_grid_sphere(doa.grid.cartesian, doa.grid.values, "imgs/doa_result.png")
 
 
 if __name__ == "__main__":

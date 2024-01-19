@@ -1,11 +1,10 @@
-import numpy as np
 import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d as a3
 import scipy.spatial as sp  # For ConvexHull, SphericalVoronoi
 from pyroomacoustics.doa import GridSphere
 
 
-def plot_grid_sphere(cartesian, values):
+def plot_grid_sphere(cartesian, values, outpath=None):
     # プロット用の準備
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
@@ -44,6 +43,8 @@ def plot_grid_sphere(cartesian, values):
     ax.set_zlim([-1, 1])
 
     # プロットを表示
+    if outpath is not None:
+        plt.savefig(outpath)
     plt.show()
 
 
@@ -60,7 +61,7 @@ def main():
     # grid_sphere.valuesを後ろのプロットで使用するため
     grid_sphere.apply(test_func)
 
-    plot_grid_sphere(grid_sphere.cartesian, grid_sphere.values)
+    plot_grid_sphere(grid_sphere.cartesian, grid_sphere.values, "imgs/grid_sphere.png")
 
 
 if __name__ == "__main__":

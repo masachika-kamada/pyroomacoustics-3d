@@ -1,18 +1,8 @@
-"""
-This sample program demonstrate how to import a model from an STL file.
-Currently, the materials need to be set in the program which is not very practical
-when different walls have different materials.
-
-The STL file was kindly provided by Diego Di Carlo (@Chutlhu).
-"""
 import argparse
-import os
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-from mpl_toolkits import mplot3d
-
 import pyroomacoustics as pra
 
 try:
@@ -68,7 +58,9 @@ if __name__ == "__main__":
     room.ray_tracing()
     room.compute_rir()
     room.plot_rir()
+    plt.savefig("imgs/stl_rir_plot.png")
 
     # show the room
     room.plot(img_order=1)
+    plt.savefig("imgs/stl_room.png")
     plt.show()
